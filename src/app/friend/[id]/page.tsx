@@ -1,17 +1,16 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { friendsDatabase } from "@/db/db";
 import { useLiveQuery } from "dexie-react-hooks";
 import { formatTimeUnit } from "@/util/rendering";
-import { deleteFriend } from "@/db/friendService";
+import { db } from "@/db/db-v2";
 
 export default function FriendDetails() {
   const router = useRouter();
   const idString = useParams()["id"] as string;
   const id = idString ? Number.parseInt(idString) : -1;
   const friendArray = useLiveQuery(() =>
-    friendsDatabase.friends.where("id").equals(id).toArray()
+    db.friends.where("id").equals(id).toArray()
   );
   const friend =
     friendArray && friendArray.length === 1 ? friendArray[0] : undefined;
@@ -20,7 +19,7 @@ export default function FriendDetails() {
     if (!id) {
       return;
     }
-    deleteFriend(id).then(() => router.push("/"));
+    db.friends.delete(id).then(() => router.push("/"));
   };
 
   return (

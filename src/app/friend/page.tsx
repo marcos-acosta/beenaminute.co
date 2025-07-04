@@ -25,7 +25,7 @@ export default function AddFriend() {
       tags: tagText
         .split(",")
         .map((tag) => tag.trim())
-        .filter((tag) => !tag.length),
+        .filter((tag) => tag.length > 0),
       blurb: blurb,
       hangIds: [],
       inverseFrequency: keepUp ? { amount: amount, unit: timeUnit } : undefined,

@@ -14,103 +14,36 @@ export class FriendsDatabase extends Dexie {
         "++id, firstName, lastName, fullName, tags, inverseFrequency, hangIds, blurb, lastSeen",
       hangs: "++id, friendIds, date, notes, friendNames",
     });
-
-    // Set up hooks
-    this.setupHooks();
   }
 
-  private setupHooks(): void {
-    // Hook for when hangs are created - update lastSeen for friends
-    this.hangs.hook("creating", (primKey, obj, trans) => {
-      this.updateLastSeenForFriends(obj.friendIds, obj.date, trans);
-    });
+  // Compute lastSeen on demand
+  async getFriendsWithLastSeen(): Promise<Friend[]> {
+    const friends = await this.friends.toArray();
+    const hangs = await this.hangs.orderBy("date").reverse().toArray();
 
-    // Hook for when hangs are updated - update lastSeen for friends
-    this.hangs.hook("updating", (modifications, primKey, obj, trans) => {
-      if (
-        modifications.hasOwnProperty("friendIds") ||
-        modifications.hasOwnProperty("date")
-      ) {
-        const updatedObj = { ...obj, ...modifications };
-        this.updateLastSeenForFriends(
-          updatedObj.friendIds,
-          updatedObj.date,
-          trans
-        );
-      }
-    });
-
-    // Hook for when hangs are deleted - recalculate lastSeen for affected friends
-    this.hangs.hook("deleting", (primKey, obj, trans) => {
-      this.recalculateLastSeenForFriends(obj.friendIds, trans);
-    });
-
-    // Hook for when friends are updated - update their names in hangs
-    this.friends.hook("updating", (modifications, primKey, obj, trans) => {
-      if ("fullName" in modifications) {
-        this.updateFriendNameInHangs(
-          primKey,
-          modifications.fullName as string,
-          trans
-        );
-      }
+    return friends.map((friend) => {
+      const lastHang = hangs.find((hang) =>
+        hang.friendIds.includes(friend.id!)
+      );
+      return {
+        ...friend,
+        lastSeen: lastHang ? lastHang.date : undefined,
+      };
     });
   }
 
-  // Update lastSeen field for friends when they appear in a hang
-  private async updateLastSeenForFriends(
-    friendIds: number[],
-    hangDate: Date,
-    trans: Transaction
-  ): Promise<void> {
-    for (const friendId of friendIds) {
-      const friend = await trans.table("friends").get(friendId);
-      if (friend && (!friend.lastSeen || hangDate > friend.lastSeen)) {
-        await trans.table("friends").update(friendId, { lastSeen: hangDate });
-      }
-    }
-  }
+  // Compute friend names on demand
+  async getHangsWithFriendNames(): Promise<
+    (Hang & { friendNames: string[] })[]
+  > {
+    const hangs = await this.hangs.toArray();
+    const friends = await this.friends.toArray();
+    const friendMap = new Map(friends.map((f) => [f.id!, f.fullName]));
 
-  // Recalculate lastSeen for friends (used when hangs are deleted)
-  private async recalculateLastSeenForFriends(
-    friendIds: number[],
-    trans: Transaction
-  ): Promise<void> {
-    for (const friendId of friendIds) {
-      const latestHangs = await trans
-        .table("hangs")
-        .where("friendIds")
-        .equals(friendId)
-        .reverse()
-        .sortBy("date");
-
-      const lastSeen = latestHangs.length > 0 ? latestHangs[0].date : undefined;
-      await trans.table("friends").update(friendId, { lastSeen });
-    }
-  }
-
-  // Update friend names in hangs when a friend's name changes
-  private async updateFriendNameInHangs(
-    friendId: number,
-    fullName: string,
-    trans: Transaction
-  ): Promise<void> {
-    const hangsToUpdate = await trans
-      .table("hangs")
-      .where("friendIds")
-      .equals(friendId)
-      .toArray();
-
-    for (const hang of hangsToUpdate) {
-      const friendIndex = hang.friendIds.indexOf(friendId);
-      if (friendIndex !== -1) {
-        const updatedFriendNames = [...hang.friendNames];
-        updatedFriendNames[friendIndex] = fullName;
-        await trans
-          .table("hangs")
-          .update(hang.id!, { friendNames: updatedFriendNames });
-      }
-    }
+    return hangs.map((hang) => ({
+      ...hang,
+      friendNames: hang.friendIds.map((id) => friendMap.get(id) || "Unknown"),
+    }));
   }
 
   // Helper method to create a hang with friend names automatically populated

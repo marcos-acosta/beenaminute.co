@@ -1,7 +1,4 @@
-import { Friend } from "@/interfaces";
-
-const compareFriendsByWantToKeepUp = (friendA: Friend, friendB: Friend) =>
-  (friendB.inverseFrequency ? 1 : 0) - (friendA.inverseFrequency ? 1 : 0);
+import { Friend, Hang } from "@/interfaces";
 
 const compareFriendsByLastSeen = (friendA: Friend, friendB: Friend) => {
   if (!friendA.lastSeen && friendB.lastSeen) {
@@ -21,11 +18,22 @@ const compareFriendsByName = (friendA: Friend, friendB: Friend) => {
   return friendA.fullName.localeCompare(friendB.fullName);
 };
 
-export const sortFriends = (friends: Friend[]) => {
+const _sortFriends = (friends: Friend[]) => {
   return friends.sort(
     (friendA, friendB) =>
-      compareFriendsByWantToKeepUp(friendA, friendB) ||
       compareFriendsByLastSeen(friendA, friendB) ||
       compareFriendsByName(friendA, friendB)
+  );
+};
+
+export const sortFriends = (friends: Friend[]) => {
+  const friendsToSeeOften = friends.filter((f) => f.inverseFrequency);
+  const otherFriends = friends.filter((f) => !f.inverseFrequency);
+  return [..._sortFriends(friendsToSeeOften), ..._sortFriends(otherFriends)];
+};
+
+export const sortHangs = (hangs: Hang[]) => {
+  return hangs.sort(
+    (hangA, hangB) => hangB.date.valueOf() - hangA.date.valueOf()
   );
 };

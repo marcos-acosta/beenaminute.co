@@ -1,7 +1,7 @@
-import { Friend, FriendMinusId } from "@/interfaces";
+import { Friend } from "@/interfaces";
 import { friendsDatabase } from "./db";
 
-export async function addFriend(friend: FriendMinusId) {
+export async function addFriend(friend: Friend) {
   await friendsDatabase.friends.add(friend);
 }
 

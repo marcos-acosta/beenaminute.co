@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FriendMinusId, TimeUnit } from "@/interfaces";
-import { addFriend } from "@/db/friendService";
+import { Friend, TimeUnit } from "@/interfaces";
+import { db } from "@/db/db-v2";
 
 export default function AddFriend() {
   const router = useRouter();
@@ -18,16 +18,20 @@ export default function AddFriend() {
   const canAdd = first.length && last.length;
 
   const _addFriend = () => {
-    const newFriend: FriendMinusId = {
+    const newFriend: Friend = {
       firstName: first,
       lastName: last,
-      tags: tagText.split(",").map((tag) => tag.trim()),
+      fullName: `${first} ${last}`,
+      tags: tagText
+        .split(",")
+        .map((tag) => tag.trim())
+        .filter((tag) => !tag.length),
       blurb: blurb,
       hangIds: [],
       inverseFrequency: keepUp ? { amount: amount, unit: timeUnit } : undefined,
     };
-    addFriend(newFriend);
-    router.push("/");
+
+    db.friends.add(newFriend).then(() => router.push("/"));
   };
 
   return (

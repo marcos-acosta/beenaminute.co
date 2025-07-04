@@ -1,33 +1,26 @@
 "use client";
 
-import { addFriend } from "@/db/friendService";
-import { friendsDatabase } from "../db/db";
+import { db } from "@/db/db-v2";
+import { sortFriends } from "@/util/sorting";
 import { useLiveQuery } from "dexie-react-hooks";
-import { TimeUnit } from "@/interfaces";
+import Link from "next/link";
 
 export default function Homepage() {
-  const friends = useLiveQuery(() => friendsDatabase.friends.toArray());
-
-  const addFriendWithName = (firstName: string, lastName: string) => {
-    addFriend({
-      firstName: firstName,
-      lastName: lastName,
-      hangIds: [],
-      blurb: "",
-      tags: [],
-    });
-  };
+  const friends = useLiveQuery(() => db.friends.toArray());
+  const friendsOrdered = friends && sortFriends(friends);
 
   return (
     <div>
       <ul>
-        {friends?.map((f) => (
+        {friendsOrdered?.map((f) => (
           <li key={f.id}>
-            {f.firstName}, {f.lastName}
+            <Link href={`/friend/${f.id}`}>
+              {f.firstName} {f.lastName}
+            </Link>
           </li>
         ))}
       </ul>
-      <button onClick={() => addFriendWithName("joe", "smith")}>Add</button>
+      <Link href="/friend">Add</Link>
     </div>
   );
 }

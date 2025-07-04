@@ -11,21 +11,21 @@ export interface Duration {
 }
 
 export interface Friend {
-  id: number;
+  id?: number;
   firstName: string;
   lastName: string;
+  fullName: string;
   tags: string[];
   inverseFrequency?: Duration;
   hangIds: number[];
   blurb: string;
+  lastSeen?: Date;
 }
 
 export interface Hang {
-  id: number;
+  id?: number;
   friendIds: number[];
   date: Date;
   notes: string;
+  friendNames: string[];
 }
-
-export type FriendMinusId = Omit<Friend, "id">;
-export type HangMinusId = Omit<Hang, "id">;

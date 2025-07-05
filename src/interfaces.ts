@@ -17,7 +17,6 @@ export interface Friend {
   fullName: string;
   tags: string[];
   inverseFrequency?: Duration;
-  hangIds: number[];
   blurb: string;
   lastSeen?: Date;
 }

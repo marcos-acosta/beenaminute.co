@@ -1,5 +1,5 @@
 import { Friend, Hang } from "@/interfaces";
-import Dexie, { Transaction } from "dexie";
+import Dexie from "dexie";
 
 // Database class
 export class FriendsDatabase extends Dexie {
@@ -11,7 +11,7 @@ export class FriendsDatabase extends Dexie {
 
     this.version(1).stores({
       friends:
-        "++id, firstName, lastName, fullName, tags, inverseFrequency, hangIds, blurb, lastSeen",
+        "++id, firstName, lastName, fullName, tags, inverseFrequency, blurb, lastSeen",
       hangs: "++id, friendIds, date, notes, friendNames",
     });
   }
